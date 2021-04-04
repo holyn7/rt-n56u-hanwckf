@@ -388,7 +388,7 @@ tabtitle[3] = new Array("", "<#menu5_3_1#>", "<#menu5_3_3#>", "<#menu5_3_4#>", "
 tabtitle[4] = new Array("", "<#menu5_5_1#>", "<#menu5_5_5#>", "<#menu5_5_2#>", "<#menu5_5_3#>", "<#menu5_5_4#>");
 tabtitle[5] = new Array("", "<#menu5_4_3#>", "<#menu5_4_1#>", "<#menu5_4_2#>", "<#menu5_4_4#>", "<#menu5_4_5#>");
 tabtitle[6] = new Array("", "<#menu5_6_2#>", "<#menu5_6_5#>", "<#menu5_6_1#>", "<#menu5_6_3#>", "<#menu5_6_4#>", "<#menu5_6_6#>");
-tabtitle[7] = new Array("", "<#menu5_10_1#>", "<#menu5_10_2#>", "<#menu5_10_3#>" , "<#menu5_10_4#>");
+tabtitle[7] = new Array("", "<#menu5_10_1#>", "<#menu5_10_2#>", "<#menu5_10_3#>" , "<#menu5_22_1#>");
 tabtitle[8] = new Array("", "<#menu5_11#>", "<#menu5_12#>", "WAN", "", "", "", "", "", "", "");
 tabtitle[9] = new Array("", "<#menu5_7_2#>", "<#menu5_7_3#>", "<#menu5_7_5#>", "<#menu5_7_6#>", "<#menu5_7_8#>");
 if (found_app_scutclient()){
@@ -547,7 +547,7 @@ if (found_app_wyy()){
 	menuL2_title.push("<#menu5_31#>");
 } else menuL2_title.push("");
 
-menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1], tablink[8][1], tablink[9][1]);
+menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1], support_2g_radio() ? tablink[8][1] : "Main_EStatus_Content.asp", tablink[9][1]);
 if (found_app_scutclient()){
 	menuL2_link.push(scutclient_array[1]);
 } else menuL2_link.push("");
@@ -653,6 +653,8 @@ function show_menu(L1, L2, L3){
 		menuL2_title[1] = "";
 		tabtitle[0].splice(1,6);
 		tablink[0].splice(1,6);
+		tabtitle[8].splice(1,1);
+		tablink[8].splice(1,1);
 	}
 
 	if(!support_5g_radio()){
@@ -660,8 +662,9 @@ function show_menu(L1, L2, L3){
 		menuL2_title[2] = "";
 		tabtitle[1].splice(1,6);
 		tablink[1].splice(1,6);
-		tabtitle[8].splice(2,1);
-		tablink[8].splice(2,1);
+		var idx = support_2g_radio() ? 2 : 1;
+		tabtitle[8].splice(idx,1);
+		tablink[8].splice(idx,1);
 	}
 
 	if(!support_storage()){
