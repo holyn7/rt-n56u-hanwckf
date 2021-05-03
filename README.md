@@ -101,7 +101,7 @@ sudo yum install ncurses-* flex byacc bison zlib-* gmp-* mpfr-* gettext \
 * 克隆源码
 
 ```shell
-git clone --depth=1 https://github.com/chongshengB/rt-n56u.git /opt/rt-n56u
+git clone --depth=1 https://github.com/MeIsReallyBa/rt-n56u
 ```
 
 * 准备工具链
@@ -145,4 +145,3 @@ fakeroot ./build_firmware_modify PSG1218
 * lean源码: https://github.com/coolsnowwolf/lede
 * 汉化字典来自：https://github.com/gorden5566/padavan
 * hanwckf更新日志：https://www.jianshu.com/p/d76a63a12eae
-

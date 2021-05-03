@@ -41,6 +41,7 @@ find_bin() {
 	ssr-local) ret="/usr/bin/ssr-local" ;;
 	ssr-server) ret="/usr/bin/ssr-server" ;;
 	v2ray) ret="/usr/bin/v2ray" ;;
+	xray) ret="/usr/bin/v2ray" ;;
 	trojan) ret="/usr/bin/trojan" ;;
 	socks5) ret="/usr/bin/ipt2socks" ;;
 	esac
@@ -86,6 +87,17 @@ local type=$stype
 		sed -i 's/\\//g' $v2_json_file
 		fi
 		;;
+	xray)
+		v2_bin="/usr/bin/v2ray"
+		v2ray_enable=1
+		if [ "$2" = "1" ]; then
+		lua /etc_ro/ss/genxrayconfig.lua $1 udp 1080 >/tmp/v2-ssr-reudp.json
+		sed -i 's/\\//g' /tmp/v2-ssr-reudp.json
+		else
+		lua /etc_ro/ss/genxrayconfig.lua $1 tcp 1080 >$v2_json_file
+		sed -i 's/\\//g' $v2_json_file
+		fi
+		;;	
 	esac
 }
 
@@ -212,6 +224,10 @@ start_redir_tcp() {
 		$bin -config $v2_json_file >/dev/null 2>&1 &
 		echo "$(date "+%Y-%m-%d %H:%M:%S") $($bin -version | head -1) 启动成功!" >>/tmp/ssrplus.log
 		;;
+	xray)
+		$bin -config $v2_json_file >/dev/null 2>&1 &
+		echo "$(date "+%Y-%m-%d %H:%M:%S") $($bin -version | head -1) 启动成功!" >>/tmp/ssrplus.log
+		;;	
 	socks5)
 		for i in $(seq 1 $threads); do
 		lua /etc_ro/ss/gensocks.lua $GLOBAL_SERVER 1080 >/dev/null 2>&1 &
@@ -241,6 +257,10 @@ start_redir_udp() {
 			gen_config_file $UDP_RELAY_SERVER 1
 			$bin -config /tmp/v2-ssr-reudp.json >/dev/null 2>&1 &
 			;;
+		xray)
+			gen_config_file $UDP_RELAY_SERVER 1
+			$bin -config /tmp/v2-ssr-reudp.json >/dev/null 2>&1 &
+			;;	
 		trojan)
 			gen_config_file $UDP_RELAY_SERVER 1
 			$bin --config /tmp/trojan-ssr-reudp.json >/dev/null 2>&1 &
@@ -272,37 +292,23 @@ case "$run_mode" in
 		ipset -! flush china
 		ipset -! restore </tmp/china.ipset 2>/dev/null
 		rm -f /tmp/china.ipset
-		if [ $(nvram get ss_chdns) = 1 ]; then
-			chinadnsng_enable_flag=1
-			logger -t "SS" "下载cdn域名文件..."
-			wget --no-check-certificate --timeout=8 -qO - https://gitee.com/bkye/rules/raw/master/cdn.txt > /tmp/cdn.txt
-			if [ ! -f "/tmp/cdn.txt" ]; then
-				logger -t "SS" "cdn域名文件下载失败，可能是地址失效或者网络异常！可能会影响部分国内域名解析了国外的IP！"
-			else
-				logger -t "SS" "cdn域名文件下载成功"
-			fi
-			logger -st "SS" "启动chinadns..."
-			dns2tcp -L"127.0.0.1#5353" -R"$(nvram get tunnel_forward)" >/dev/null 2>&1 &
-			chinadns-ng -b 0.0.0.0 -l 65353 -c $(nvram get china_dns) -t 127.0.0.1#5353 -4 china -M -m /tmp/cdn.txt >/dev/null 2>&1 &
-			sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
-			sed -i '/server=127.0.0.1/d' /etc/storage/dnsmasq/dnsmasq.conf
-			cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
-no-resolv
-server=127.0.0.1#65353
-EOF
-    		fi
+		dnsstr="$(nvram get tunnel_forward)"
+		dnsserver=$(echo "$dnsstr" | awk -F '#' '{print $1}')
+		#dnsport=$(echo "$dnsstr" | awk -F '#' '{print $2}')
+		logger -st "SS" "启动dns2tcp：5353端口..."
+		dns2tcp -L"127.0.0.1#5353" -R"$dnsstr" >/dev/null 2>&1 &
+		pdnsd_enable_flag=0	
+		logger -st "SS" "开始处理gfwlist..."
 	;;
 	gfw)
-		if [ $(nvram get pdnsd_enable) = 0 ]; then
-			dnsstr="$(nvram get tunnel_forward)"
-			dnsserver=$(echo "$dnsstr" | awk -F '#' '{print $1}')
-			#dnsport=$(echo "$dnsstr" | awk -F '#' '{print $2}')
-			ipset add gfwlist $dnsserver 2>/dev/null
-			logger -st "SS" "启动dns2tcp：5353端口..."
-			dns2tcp -L"127.0.0.1#5353" -R"$dnsstr" >/dev/null 2>&1 &
-			pdnsd_enable_flag=0	
-			logger -st "SS" "开始处理gfwlist..."
-		fi
+		dnsstr="$(nvram get tunnel_forward)"
+		dnsserver=$(echo "$dnsstr" | awk -F '#' '{print $1}')
+		#dnsport=$(echo "$dnsstr" | awk -F '#' '{print $2}')
+		ipset add gfwlist $dnsserver 2>/dev/null
+		logger -st "SS" "启动dns2tcp：5353端口..."
+		dns2tcp -L"127.0.0.1#5353" -R"$dnsstr" >/dev/null 2>&1 &
+		pdnsd_enable_flag=0	
+		logger -st "SS" "开始处理gfwlist..."
 		;;
 	oversea)
 		ipset add gfwlist $dnsserver 2>/dev/null
@@ -362,6 +368,12 @@ start_local() {
 		;;
 	v2ray)
 		lua /etc_ro/ss/genv2config.lua $local_server tcp 0 $s5_port >/tmp/v2-ssr-local.json
+		sed -i 's/\\//g' /tmp/v2-ssr-local.json
+		$bin -config /tmp/v2-ssr-local.json >/dev/null 2>&1 &
+		echo "$(date "+%Y-%m-%d %H:%M:%S") Global_Socks5:$($bin -version | head -1) Started!" >>/tmp/ssrplus.log
+		;;
+	xray)
+		lua /etc_ro/ss/genxrayconfig.lua $local_server tcp 0 $s5_port >/tmp/v2-ssr-local.json
 		sed -i 's/\\//g' /tmp/v2-ssr-local.json
 		$bin -config /tmp/v2-ssr-local.json >/dev/null 2>&1 &
 		echo "$(date "+%Y-%m-%d %H:%M:%S") Global_Socks5:$($bin -version | head -1) Started!" >>/tmp/ssrplus.log
