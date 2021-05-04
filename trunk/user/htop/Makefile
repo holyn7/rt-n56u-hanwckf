@@ -19,8 +19,7 @@ config_test:
 	( if [ -f ./config_done ]; then \
 		echo "the same configuration"; \
 	else \
-		./autogen.sh
-		make configure && touch config_done; \
+		./autogen.sh && make configure && touch config_done; \
 	fi )
 
 configure:
