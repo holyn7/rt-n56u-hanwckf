@@ -19,11 +19,11 @@ config_test:
 	( if [ -f ./config_done ]; then \
 		echo "the same configuration"; \
 	else \
-		./autogen.sh && make configure && touch config_done; \
+		make configure && touch config_done; \
 	fi )
 
 configure:
-	( cd $(SRC_NAME) ; \
+	( cd $(SRC_NAME) && ./autogen.sh; \
 	./configure \
 		--prefix=/usr \
 		--enable-unicode \
